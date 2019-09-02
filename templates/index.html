@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if title %}
+          <title>{{ title }}</title>
+        {% endif %}
+        <link rel="stylesheet" href="/static/style.css">
+            <style>
+              .sort.desc:after {
+                content: "▼";
+              }
+              .sort.asc:after {
+                content: "▲";
+              }
+              .users {
+                counter-reset: rowCount;
+              }
+              .trbody {
+                counter-increment: rowCount;
+              }
+              .data_num::before {
+                content: counter(rowCount);
+              }
+              th {
+                text-align: center
+              }
+            </style>
+
+      </head>
+<body>
+<table id="users">
+  <thead>
+    <tr>
+      <th>通番</th>
+      <th class="sort" data-sort="name">名前</th>
+      <th class="sort" data-sort="created_at">作成日時</th>
+      <th class="sort" data-sort="kakuritsu">有益な確率</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody class="list">
+    {% for i in body: %}
+    <tr class="trbody">
+      <td class="data_num"></td>
+      <td class="name">{{ i[0] }}</td>
+      <td class="created_at">{{ i[1] }}</td>
+      <td class="kakuritsu">{{ '{:.3f}'.format(i[2]) }}</td>
+      <td><button onclick="location.href='{{ i[3] }}'">詳細</button></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+        <script>
+            var options = {
+              valueNames: [ 'name', 'created_at', 'kakuritsu']
+            };
+            var userList = new List('users', options);
+            userList.sort( 'kakuritsu', {order : 'desc' });
+            </script>
+</body>
+</html>
