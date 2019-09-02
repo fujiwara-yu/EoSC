@@ -4,34 +4,17 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/static/style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/css/theme.default.min.css">
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/js/jquery.tablesorter.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/css/theme.blue.min.css">
         {% if title %}
           <title>{{ title }}</title>
         {% endif %}
-        <link rel="stylesheet" href="/static/style.css">
-            <style>
-              .sort.desc:after {
-                content: "▼";
-              }
-              .sort.asc:after {
-                content: "▲";
-              }
-              .users {
-                counter-reset: rowCount;
-              }
-              .trbody {
-                counter-increment: rowCount;
-              }
-              .data_num::before {
-                content: counter(rowCount);
-              }
-              th {
-                text-align: center
-              }
-            </style>
-
       </head>
 <body>
-<table id="users">
+<table id="mytable" class="tablesorter tablesorter-blue">
   <thead>
     <tr>
       <th>通番</th>
@@ -41,7 +24,7 @@
       <th>操作</th>
     </tr>
   </thead>
-  <tbody class="list">
+  <tbody>
     {% for i in body: %}
     <tr class="trbody">
       <td class="data_num"></td>
@@ -53,13 +36,18 @@
     {% endfor %}
   </tbody>
 </table>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
-        <script>
-            var options = {
-              valueNames: [ 'name', 'created_at', 'kakuritsu']
-            };
-            var userList = new List('users', options);
-            userList.sort( 'kakuritsu', {order : 'desc' });
-            </script>
+<script>
+$(document).ready(function()
+    {
+        $("#mytable").tablesorter({
+          sortList: [[3,1]],
+          headers: {
+            0: { sorter: false },
+            4: { sorter: false }
+          }
+        });
+    }
+);
+</script>
 </body>
 </html>
