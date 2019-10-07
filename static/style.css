@@ -1,0 +1,21 @@
+table {
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th {
+    font-weight: bold;
+    text-align: center;
+  }
+  .users {
+    counter-reset: rowCount;
+  }
+  .trbody {
+    counter-increment: rowCount;
+  }
+  .data_num::before {
+    content: counter(rowCount);
+  }
+  .tablesorter-blue {
+    width: initial !important;
+  } 
