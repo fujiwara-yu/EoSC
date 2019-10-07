@@ -19,7 +19,6 @@ def rate_limit_controll():
 #    store_pulls(pulls)
 #
 #def store_pulls(pulls):
-#   #なんかデータベースに入れる
 #    for pr in pulls:
 #        print(pr.id, pr.number, pr.user.id, pr.created_at, pr.closed_at, pr.merged_at, pr.state, pr.additions, pr.deletions, pr.changed_files, pr.base.repo.default_branch)
 
@@ -113,11 +112,11 @@ def get_pull_title():
     print("Get title finish")
 
 def run():
-    #get_pull_list()
-    #get_pull_comment_list()
-    #get_project_commit_list()
-    #commit()
-    #get_pull_commit_list()
+    get_pull_list()
+    get_pull_comment_list()
+    get_project_commit_list()
+    commit()
+    get_pull_commit_list()
     get_pull_title()
     print("ALL finish")
 
