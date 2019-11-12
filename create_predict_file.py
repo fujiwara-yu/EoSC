@@ -6,23 +6,19 @@ import time
 import datetime
 from dateutil.relativedelta import relativedelta
 import sys
+import lib.database
 
-db=mysql.connector.connect(host="localhost", user="test")
-cursor=db.cursor()
-cursor.execute("USE nomlab_db")
-db.commit()
+db = lib.database.Database()
 
 def get_data():
     # データを取得
-    cursor.execute('SELECT * FROM pulls')
-    rows = cursor.fetchall()
+    rows = db.select('SELECT * FROM pulls')
     return rows
 
 # ３ヵ月分のcommitを集める
 # sha, file, branch
 def get_commit_list():
-    cursor.execute('SELECT sha, filename, created_at FROM project_commits')
-    rows = cursor.fetchall()
+    rows = db.select('SELECT sha, filename, created_at FROM project_commits')
 
     return rows
 
@@ -32,21 +28,18 @@ def get_commit_list():
 def commits_on_files_touched(pr):
     months_back = 3
     sql = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
-    cursor.execute(sql, (pr[0],))
-    commits = cursor.fetchall()
+    commits = db.select(sql, (pr[0],))
     tc = pr[4]
     file_list = []
     com = []
 
     for commit in commits:
         sql = "SELECT filename FROM project_commits WHERE sha = %s;"
-        cursor.execute(sql, (commit[0],))
-        file_list = file_list + cursor.fetchall()
+        file_list = file_list + db.select(sql, (commit[0],))
 
     for file in file_list:
         sql = "SELECT * FROM project_commits WHERE filename = %s;"
-        cursor.execute(sql, (file[0],))
-        com = com + cursor.fetchall()
+        com = com + db.select(sql, (file[0],))
 
     activity = 0
     for c in com:
@@ -61,16 +54,14 @@ def commits_on_files_touched(pr):
 # できてない
 def branch_hotness(pr):
     months_back = 12
-   # sql = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
-   # cursor.execute(sql, (pr[0],))
-   # commits = cursor.fetchall()
+    # sql = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
+    # commits = db.select(sql, (pr[0],))
     tc = pr[4]
     com = []
 
     # 3ヵ月いないのをブランチごとに取り出す pr[7]のブランチの情報でwhere
     sql = "SELECT * FROM project_commits;"
-    cursor.execute(sql)
-    com = com + cursor.fetchall()
+    com = com + db.select(sql)
 
     activity = 0
     for c in com:

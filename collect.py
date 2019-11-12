@@ -5,22 +5,15 @@ import mysql.connector
 import time
 import types
 import yaml
+import lib.database
 
 def rate_limit_controll():
     # APIの制限メッセージ
-    rate_remaining, rate = client.rate_limiting
+    rate_remaining = client.rate_limiting
     print("limit: %d" % rate_remaining)
     if (rate_remaining < 10):
         print("API limit\nPlease wait 1 hour")
         time.sleep(3600)
-
-#def get_github_data(repo):
-#    pulls = repo.get_pulls(state='close', sort='created')
-#    store_pulls(pulls)
-#
-#def store_pulls(pulls):
-#    for pr in pulls:
-#        print(pr.id, pr.number, pr.user.id, pr.created_at, pr.closed_at, pr.merged_at, pr.state, pr.additions, pr.deletions, pr.changed_files, pr.base.repo.default_branch)
 
 # PRをDBに保存する
 def get_pull_list():
@@ -30,8 +23,7 @@ def get_pull_list():
         p = ()
         p = (pr.id, pr.number, pr.user.login, pr.body, pr.created_at, pr.closed_at, pr.merged_at, pr.state, pr.commits, pr.additions, pr.deletions, pr.changed_files, pr.base.repo.default_branch)
         print(pr.id, pr.number, pr.user.login, pr.body, pr.created_at, pr.closed_at, pr.merged_at, pr.state, pr.commits, pr.additions, pr.deletions, pr.changed_files, pr.base.repo.default_branch)
-        cursor.execute(insert_pulls, p)
-        db.commit()
+        db.insert(insert_pulls, p)
         rate_limit_controll()
 
     print("Get pull finish")
@@ -45,8 +37,7 @@ def get_pull_comment_list():
             x = ()
             x = (prc.id, iss.number,prc.user.login, prc.created_at, prc.body)
             print(prc.id, iss.number,prc.user.login, prc.created_at, prc.body)
-            cursor.execute(insert_comments, x)
-            db.commit()
+            db.insert(insert_comments, x)
             rate_limit_controll()
 
     print("Get pull_comment finish")
@@ -61,8 +52,7 @@ def get_project_commit_list():
                 print(com.sha, com.author.login, file.filename, com.commit.author.date, com.commit.message, file.additions, file.deletions, file.changes)
                 x = ()
                 x = (com.sha, com.author.login, file.filename, com.commit.author.date, com.commit.message, file.additions, file.deletions, file.changes)
-                cursor.execute(insert_commits, x)
-                db.commit()
+                db.insert(insert_commits, x)
                 rate_limit_controll()
 
     print("Get project_commit finish")
@@ -75,8 +65,7 @@ def get_project_commit_list():
 #            if pull.state == ""
 #            print(commit.sha)
 #            sql = "UPDATE commits SET pr_id = %s WHERE sha = %s;"
-#            cursor.execute(sql, (pull.id, commit.sha))
-#            db.commit()
+#            db.insert(sql, (pull.id, commit.sha))
 #            rate_limit_controll()
 
 def get_pull_commit_list():
@@ -92,8 +81,7 @@ def get_pull_commit_list():
                     print(com.sha, pull.id, com.author.login, file.filename, com.commit.author.date, com.commit.message)
                     x = ()
                     x = (com.sha, pull.id, com.author.login, file.filename, com.commit.author.date, com.commit.message)
-                    cursor.execute(insert_commits, x)
-                    db.commit()
+                    db.insert(insert_commits, x)
                     rate_limit_controll()
 
     print("Get pull_commit finish")
@@ -105,8 +93,7 @@ def get_pull_title():
         p = ()
         p = (pr.id, pr.number, pr.title, pr.html_url)
         print(pr.id, pr.number, pr.title, pr.html_url)
-        cursor.execute(insert_pulls, p)
-        db.commit()
+        db.insert(insert_pulls, p)
         rate_limit_controll()
 
     print("Get title finish")
@@ -115,7 +102,7 @@ def run():
     get_pull_list()
     get_pull_comment_list()
     get_project_commit_list()
-    commit()
+    #commit()
     get_pull_commit_list()
     get_pull_title()
     print("ALL finish")
@@ -123,23 +110,19 @@ def run():
 if __name__ == "__main__":
     args = sys.argv
 
-     # 引数ないとき
+    # 引数ないとき
     if(len(args) != 2):
         print("Not argument")
         sys.exit()
 
+    # DB接続
+    db = lib.database.Database()
+
+    # tokenの設定
     f = open("settings.yaml", "r")
     settings = yaml.load(f)
-
-    #データベース設定
-    db=mysql.connector.connect(host="localhost", user="test")
-
-    cursor=db.cursor()
-
-    cursor.execute("USE test_db")
-    db.commit()
-
     token = settings["token"]
+
     client = Github(token, per_page=100)
     repo = client.get_repo(args[1])
     pulls = repo.get_pulls(state='close', sort='created')

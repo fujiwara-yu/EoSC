@@ -5,17 +5,13 @@ import re
 import time
 import datetime
 from dateutil.relativedelta import relativedelta
+import lib.database
 
-db=mysql.connector.connect(host="localhost", user="test")
-cursor=db.cursor()
-cursor.execute("USE test_db")
-db.commit()
+db = lib.database.Database()
 
+# データを取得
 def get_data():
-    # データを取得
-    cursor.execute('SELECT * FROM pulls join title on pulls.id = title.id')
-    rows = cursor.fetchall()
-    return rows
+    return db.select('SELECT * FROM pulls join title on pulls.id = title.id')
 
 # 有益無益に分類
 def useful_check(row):
@@ -23,9 +19,8 @@ def useful_check(row):
     if row[6] is not None:
         return "useful"
 
-    sql = "SELECT * FROM pull_commits WHERE pr_id = %s;"
-    cursor.execute(sql, (str(row[0]),))
-    commits = cursor.fetchall()
+    query = "SELECT * FROM pull_commits WHERE pr_id = %s;"
+    commits = db.select(query, (str(row[0]),))
 
     # 2.commit の一部をプロジェクトに反映したか
     #for commit in commits:
@@ -34,11 +29,10 @@ def useful_check(row):
 
     # project pull commit の場合
     # pro pull から同一のshaを取り出して比較
-    sql = "SELECT * FROM project_commits WHERE sha = %s;"
+    query = "SELECT * FROM project_commits WHERE sha = %s;"
     for commit in commits:
-        cursor.execute(sql, (str(commit[0]),))
-        xxxx = cursor.fetchall()
-        if xxxx != []:
+        sha = db.select(query, (str(commit[0]),))
+        if sha != []:
             return "useful"
 
     # 3.commit message での close
@@ -49,9 +43,8 @@ def useful_check(row):
 
     # 4.議論の中に commit id があるか
     # pullsのidからcommentsのデータを取り出して調べる
-    sql = "SELECT comment FROM pullreq_comments WHERE pr_id = %s;"
-    cursor.execute(sql, (row[1],))
-    comment_body = cursor.fetchall()
+    query = "SELECT comment FROM pullreq_comments WHERE pr_id = %s;"
+    comment_body = db.select(query, (row[1],))
     if len(comment_body) == 0: 
         last = "Not match"
     elif len(comment_body) == 1:
@@ -69,9 +62,8 @@ def useful_check(row):
         if re.search(r"merg(?:ing|ed)|appl(?:ying|ed)|pull(?:ing|ed)|push(?:ing|ed)|integrat(?:ing|ed)", str(last), re.IGNORECASE):
             return "useful"
         else:
-            sql = "SELECT sha FROM project_commits;"
-            cursor.execute(sql)
-            y = cursor.fetchall()
+            query = "SELECT sha FROM project_commits;"
+            y = db.select(query)
             if y != []:
                 for l in list:
                     if l in str(y):
@@ -86,23 +78,20 @@ def useful_check(row):
 # ファイルを変更しているcommitが３ヵ月以内であれば取り出す
 def commits_on_files_touched(pr):
     months_back = 3
-    sql = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
-    cursor.execute(sql, (pr[0],))
-    commits = cursor.fetchall()
+    query = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
+    commits = db.select(query, (pr[0],))
     tc = pr[4]
     file_list = []
     com = []
 
     for commit in commits:
-        sql = "SELECT filename FROM project_commits WHERE sha = %s;"
-        cursor.execute(sql, (commit[0],))
-        file_list = file_list + cursor.fetchall()
+        query = "SELECT filename FROM project_commits WHERE sha = %s;"
+        file_list = db.select(query, (commit[0],))
 
     for file in file_list:
         # ３ヶ月に限定する
-        sql = "SELECT * FROM project_commits WHERE filename = %s;"
-        cursor.execute(sql, (file[0],))
-        com = com + cursor.fetchall()
+        query = "SELECT * FROM project_commits WHERE filename = %s;"
+        com = db.select(query, (file[0],))
 
     activity = 0
     for c in com:
@@ -117,16 +106,15 @@ def commits_on_files_touched(pr):
 # できてない
 def branch_hotness(pr):
     months_back = 3
-   # sql = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
-   # cursor.execute(sql, (pr[0],))
-   # commits = cursor.fetchall()
+    # query = 'SELECT * FROM pull_commits WHERE pr_id = %s;'
+    # cursor.execute(query, (pr[0],))
+    # commits = cursor.fetchall()
     tc = pr[4]
     com = []
 
     # 3ヵ月いないのをブランチごとに取り出す pr[7]のブランチの情報でwhere
-    sql = "SELECT * FROM project_commits;"
-    cursor.execute(sql)
-    com = com + cursor.fetchall()
+    query = "SELECT * FROM project_commits;"
+    com = db.select(query)
 
     activity = 0
     for c in com:
@@ -152,7 +140,7 @@ def main():
         s = f"{pull[1]},{useful},{pull[2]},{pull[8]},{pull[9]+pull[10]},{pull[11]},{commit_touched},{hotness},{pull[4]},\"{pull[15]}\",{pull[16]}\n"
         with open(path, mode='a') as f:
             f.write(s)
-        
+
         with open(path) as f:
             print(f.read())
 # New file
