@@ -21,7 +21,7 @@ def add_label(repo, number):
 app = Flask(__name__)
 
 @app.route("/pr_event", methods=['POST'])
-def get_pr():
+def pr_event():
     print(request.headers)
     hook = json.loads(request.get_data())
 
