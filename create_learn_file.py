@@ -6,21 +6,30 @@ import time
 import datetime
 from dateutil.relativedelta import relativedelta
 import lib.database
+import lib.pullrequest
 
 db = lib.database.Database()
 
 # データを取得
-def get_data():
-    return db.select('SELECT * FROM pulls join title on pulls.id = title.id')
+def get_data(query):
+    pullrequest_list = []
+    prs = db.select(query)
+    for pr in prs:
+        p = lib.pullrequest.Pullrequest(*pr)
+        pullrequest_list.append(p)
+
+    return pullrequest_list
 
 # 有益無益に分類
-def useful_check(row):
+# return useful  (有益)
+#        useless (無益)
+def useful_check(pr):
     # 1.提案が merge されたか
-    if row[6] is not None:
+    if pr.merged_at is not None:
         return "useful"
 
     query = "SELECT * FROM pull_commits WHERE pr_id = %s;"
-    commits = db.select(query, (str(row[0]),))
+    commits = db.select(query, (str(pr.pr_id),))
 
     # 2.commit の一部をプロジェクトに反映したか
     #for commit in commits:
@@ -44,7 +53,7 @@ def useful_check(row):
     # 4.議論の中に commit id があるか
     # pullsのidからcommentsのデータを取り出して調べる
     query = "SELECT comment FROM pullreq_comments WHERE pr_id = %s;"
-    comment_body = db.select(query, (row[1],))
+    comment_body = db.select(query, (pr.number,))
     if len(comment_body) == 0: 
         last = "Not match"
     elif len(comment_body) == 1:
@@ -56,6 +65,7 @@ def useful_check(row):
         l = len(comment_body)
         last_list = comment_body[l-1] + comment_body[l-2] + comment_body[l-3]
         last = ",".join(last_list)
+
     # last は pull request の comment の最後から3つ
     list = re.findall(r"[0-9a-f]{6,40}", str(last), re.M)
     if list is not None:
@@ -124,20 +134,24 @@ def branch_hotness(pr):
     return activity
 
 def main():
-    path = 'learn_file.csv'
-    pulls = get_data()
+    path = 'learn_file_test.csv'
+    query = 'SELECT * FROM pulls'
+    pulls = get_data(query)
+
     #有益無益に分類
-    s = "github_id,useful,requester,num_commits_open,lines_modified_open,files_modified_open,commits_on_files_touched,branch_hotness,created_at,title,url\n"
+    s = "github_id,useful,username,num_commits_open,lines_modified_open,files_modified_open,commits_on_files_touched,branch_hotness,created_at\n"
     with open(path, mode='w') as f:
         f.write(s)
 
     for pull in pulls:
         #print("%d " % pull[1], end="")
         useful = useful_check(pull)
-        commit_touched = commits_on_files_touched(pull)
-        hotness = branch_hotness(pull)
-        print(pull[1], useful, pull[2], pull[8], pull[9]+pull[10],pull[11], commit_touched, hotness, pull[4],pull[15],pull[16])
-        s = f"{pull[1]},{useful},{pull[2]},{pull[8]},{pull[9]+pull[10]},{pull[11]},{commit_touched},{hotness},{pull[4]},\"{pull[15]}\",{pull[16]}\n"
+        #file_active = commits_on_files_touched(pull)
+        #branch_active = branch_hotness(pull)
+        file_active = 0
+        branch_active = 0
+        print(pull.number, useful, pull.username, pull.commits, pull.additions+pull.deletions, pull.changed_files, file_active, branch_active, pull.created_at)
+        s = f"{pull.number},{useful},{pull.username},{pull.commits},{pull.additions+pull.deletions},{pull.changed_files},{file_active},{branch_active},{pull.created_at}\n"
         with open(path, mode='a') as f:
             f.write(s)
 
