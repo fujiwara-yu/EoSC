@@ -48,7 +48,7 @@ num_train_data = df_train.shape[0]
 # テストデータをサンプリング
 # コアユーザ含めている
 df_drop_train = df.drop(df_train.index).sort_index()
-df_predict = df_drop_train.sample(n=100).sort_index()
+df_predict = df_drop_train.sample(n=10).sort_index()
 num_predict_data = df_predict.shape[0]
 
 print(df_train.shape, df_predict.shape)
@@ -75,7 +75,7 @@ pre = []
 res = [0] * num_predict_data
 
 # 評価のループ数
-loop_count = 50
+loop_count = 1
 for i in range(loop_count):
     print("-------------------loop:",i, "-------------------")
 
@@ -208,7 +208,6 @@ for i in range(loop_count):
             useful_match2[i] = useful_match2[i] + 1
 
         pre.append(result_predict)
-        print(pre)
 
         # pre_probaを使う
         pre_proba_sum2[i] = result_predict_proba[:, 0].sum()
@@ -237,24 +236,15 @@ for i in range(loop_count):
 ave_list = [n/loop_count for n in useful_match]
 ave_list2 = [n/loop_count for n in useful_match2]
 
-
 ave_list3 = [n/loop_count for n in pre_proba_sum]
 ave_list4 = [n/loop_count for n in pre_proba_sum2]
 
-with open(f'{project}_result.txt', 'w') as f:
-    f.write("-----正解率-----")
-    f.write(ave_list)
-    f.write(ave_list2)
-    f.write("---------------")
-    f.write("-----適合率-----")
-    f.write(res / loop_count)
-    f.write(total_predict_proba / loop_count)
-    f.write("----------------")
-    f.write("-----平均適合率-----")
-    f.write("random:", total_eval0 / loop_count)
-    f.write("sort_no_time_series:", total_eval1 / loop_count)
-    f.write("sort_time_series:", total_eval2 / loop_count)
-    f.write("------------------")
+precision_list = res / loop_count
+precision_list2 = total_predict_proba / loop_count
+random = total_eval0 / loop_count
+sort_no_time_series = total_eval1 / loop_count
+sort_time_series = total_eval2 / loop_count
+
 
 
 print("-----正解率-----")
@@ -263,16 +253,39 @@ print(ave_list2)
 print("---------------")
 
 print("-----適合率-----")
-print(res / loop_count)
-print(total_predict_proba / loop_count)
+print(precision_list)
+print(precision_list2)
 print("----------------")
 
 # 何回かやった結果の平均を求める
 print("-----平均適合率-----")
-print("random:", total_eval0 / loop_count)
-print("sort_no_time_series:", total_eval1 / loop_count)
-print("sort_time_series:", total_eval2 / loop_count)
+print("random:", random)
+print("sort_no_time_series:", sort_no_time_series)
+print("sort_time_series:", sort_time_series)
 print("------------------")
+
+with open(f'scripts/{project}_result.txt', 'w') as f:
+    f.write("-----正解率-----\n")
+    f.write(', '.join(map(str, ave_list)))
+    f.write('\n')
+    f.write(', '.join(map(str, ave_list2)))
+    f.write('\n')
+    f.write("---------------\n")
+    f.write("-----適合率-----\n")
+    f.write(', '.join(map(str, precision_list)))
+    f.write('\n')
+    f.write(', '.join(map(str,precision_list2)))
+    f.write('\n')
+    f.write("----------------\n")
+    f.write("-----平均適合率-----\n")
+    f.write(str(random))
+    f.write('\n')
+    f.write(str(sort_no_time_series))
+    f.write('\n')
+    f.write(str(sort_time_series))
+    f.write('\n')
+    f.write("------------------\n")
+
 
 
 # 使わなさそうな気がするからコメントアウト
@@ -284,8 +297,6 @@ predict_data['hyouka_2'] = np.array(ave_list2)
 #predict_data['hyouka_3'] = np.array(ave_list3)
 #predict_data['hyouka_4'] = np.array(ave_list4)
 predict_data['label'] = df_predict['useful']
-
-
 
 print(predict_data)
 
