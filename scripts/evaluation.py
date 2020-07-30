@@ -48,7 +48,7 @@ num_train_data = df_train.shape[0]
 # テストデータをサンプリング
 # コアユーザ含めている
 df_drop_train = df.drop(df_train.index).sort_index()
-df_predict = df_drop_train.sample(n=10).sort_index()
+df_predict = df_drop_train.sample(n=100).sort_index()
 num_predict_data = df_predict.shape[0]
 
 print(df_train.shape, df_predict.shape)
@@ -74,10 +74,14 @@ pre = []
 
 res = [0] * num_predict_data
 
+with open(f'scripts/result/{project}_result.txt', 'w') as f:
+    f.write('num_train_data: ')
+    f.write(str(num_train_data))
+
 # 評価のループ数
 loop_count = 1
 for i in range(loop_count):
-    print("-------------------loop:",i, "-------------------")
+    print("-------------------loop:",i+1, "-------------------")
 
     # 評価１
     # 時系列を考慮しない
@@ -184,6 +188,12 @@ for i in range(loop_count):
         #print(row)
         train = df_train.query('index < @index')
         print(train.shape)
+        with open(f'scripts/result/{project}_result.txt', 'a') as f:
+            f.write(str(i+1))
+            f.write(', ')
+            f.write(str(train.shape[0]))
+            f.write('\n')
+
 
         train_data2 = train[["num_commits_open","lines_modified_open","files_modified_open","commits_on_files_touched","branch_hotness"]]
         train_label2 = train["useful"]
@@ -264,7 +274,7 @@ print("sort_no_time_series:", sort_no_time_series)
 print("sort_time_series:", sort_time_series)
 print("------------------")
 
-with open(f'scripts/{project}_result.txt', 'w') as f:
+with open(f'scripts/result/{project}_result.txt', 'a') as f:
     f.write("-----正解率-----\n")
     f.write(', '.join(map(str, ave_list)))
     f.write('\n')
@@ -300,4 +310,4 @@ predict_data['label'] = df_predict['useful']
 
 print(predict_data)
 
-joblib.dump(predict_data, f'scripts/{project}.pkl')
+joblib.dump(predict_data, f'scripts/result/{project}.pkl')
