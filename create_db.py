@@ -9,10 +9,11 @@ import lib.database
 db = lib.database.Database()
 
 #テーブル作成
-db.create("pulls", 
+db.create("pull_requests",
             """id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            number INT,
-            username VARCHAR(100),
+            github_number INT,
+            name VARCHAR(1000),
+            creator_name VARCHAR(100),
             body VARCHAR(10000),
             created_at DATETIME,
             closed_at DATETIME,
@@ -24,38 +25,28 @@ db.create("pulls",
             changed_files INT,
             branch VARCHAR(32)""")
 
-db.create("pullreq_comments", 
+db.create("pull_request_comments",
             """id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            pr_id INT,
-            username VARCHAR(100),
+            pull_request_id INT,
+            creator_name VARCHAR(100),
             created_at DATETIME,
-            comment VARCHAR(10000)""")
+            body VARCHAR(10000)""")
 
-###commitのDB
-db.create("project_commits",
-            """sha VARCHAR(100),
-            username VARCHAR(100),
-            filename VARCHAR(100),
-            created_at DATETIME,
-            comment VARCHAR(10000),
-            additions INT,
-            deletions INT,
-            changes INT""")
-
-
-db.create("pull_commits", 
-            """sha VARCHAR(100),
-                pr_id INT,
-                username VARCHAR(100),
-                filename VARCHAR(100),
+db.create("commits",
+            """sha VARCHAR(100) PRIMARY KEY,
+                pull_request_id INT,
+                creator_name VARCHAR(100),
                 created_at DATETIME,
-                comment VARCHAR(10000)""")
+                body VARCHAR(10000),
+                state VARCHAR(100)""")
 
-#cursor.execute("""CREATE TABLE IF NOT EXISTS 
-db.create("title", 
+db.create("project_files",
             """id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                number INT,
-                title VARCHAR(1000),
-                url VARCHAR(1000)""")
+            name VARCHAR(100) UNIQUE KEY""")
+
+db.create("commits_files",
+            """commit_sha VARCHAR(100),
+            file_id INT""")
+
 
 print("Created DB\n")
