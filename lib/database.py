@@ -5,8 +5,8 @@ class Database():
     def __init__(self):
         f = open("settings.yaml", "r")
         settings = yaml.load(f, Loader=yaml.FullLoader)
-        self.host = settings['host']
-        self.user = settings['user']
+        self.host = settings['db_host']
+        self.user = settings['db_user']
         self.database = settings['database']
         self.con = mysql.connector.connect(host=self.host, user=self.user)
         self.cursor = self.con.cursor()
