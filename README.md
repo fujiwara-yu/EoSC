@@ -19,18 +19,20 @@
 
 ## Install pisces
 以下のコマンドを順に実行する．
-`$ git clone git@github.com:fujiwara-yu/pisces.git`
-`$ cd pisces`
-`$ python -m venv <myenv>`
-`$ source <myenv>/bn/activate`
-`$ pip install -r requirements.txt`
-<myenv>は任意の名前
+```
+$ git clone git@github.com:fujiwara-yu/pisces.git
+$ cd pisces
+$ python -m venv <myenv>
+$ source <myenv>/bn/activate
+$ pip install -r requirements.txt
+```
+`<myenv>`は任意の名前
 
 ## Setup
 ### GitHubのアクセストークンを取得
 以下を参考にアクセストークンを取得する．
 + [アクセストークンの取得](https://docs.github.com/ja/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token)
-+ トークンに付与する権限はrepoを選択前
++ トークンに付与する権限はrepoを選択
 
 ### mysqlの設定
 TODO
@@ -47,13 +49,16 @@ settings.yaml.sample をsettings.yamlにコピーし，settings.yaml に設定�
 ## Launch
 ### 初回起動の設定
 以下のコマンドを実行する．
-`$ python bin/main.py init`
-
+```
+$ python bin/main.py init
+```
 リポジトリの大きさによっては，トークンの制限に引っ掛かり，数時間程かかることもある．
 
 ### 起動
 以下のコマンドを実行する．
-`$ python bin/main.py start`
+```
+$ python bin/main.py start
+```
 
 ## Uninstall
 TODO
