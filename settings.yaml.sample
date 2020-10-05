@@ -1,0 +1,6 @@
+token: access_token
+user: project_user
+repo: project_repository
+database: db_name
+db_host: localhost
+db_user: test_user
