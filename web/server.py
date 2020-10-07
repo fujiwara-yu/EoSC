@@ -76,6 +76,7 @@ def pr_event():
 
         # ラベル貼り付け
         add_label(repo, github_number)
+        print("pull request is predicted")
 
     elif hook["action"] == "closed":
         # Delete file
@@ -94,7 +95,6 @@ def pr_event():
         pull_request_feature = PullRequestFeatureController.get_pull_request_feature()
         pull_request_feature_list.append(pull_request_feature)
         lib.randomforest.randomforest(pull_request_feature_list)
-        print("pull request is predicted")
 
     #debug
     else:
@@ -113,7 +113,7 @@ def index():
 
     tmp = {}
     for data_num in used_num:
-        with open(app_home + f'/db/data{data_num}.json', 'r') as f:
+        with open(app_home + f'/db/data/data{data_num}.json', 'r') as f:
             tmp = json.load(f)
 
         tmp['created_at'] = datetime.strptime(tmp['created_at'], '%Y-%m-%dT%H:%M:%S')
