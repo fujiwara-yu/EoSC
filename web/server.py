@@ -102,10 +102,9 @@ def pr_event():
 
     return request.get_data()
 
-# TODO: サーバのPR一覧の表示について
-@app.route('/')
+@app.route('/home')
 def index():
-    title = "ようこそ"
+    title = "有益提案抽出支援システム"
 
     result = []
     with open(app_home + '/db/used_num.txt', 'r') as f:
@@ -120,6 +119,38 @@ def index():
         tmp.update(url=f"https://github.com/{user}/{repo}/pull/{tmp['github_number']}")
         result.append(tmp)
 
+
+    # index.html をレンダリングする
+    return render_template('index.html', project=f"{user}/{repo}", body=result, title=title)
+
+@app.route('/home', methods=['POST'])
+def search():
+    title = "有益提案抽出支援システム"
+    pr_name = request.form['pr_name']
+    print(request.form['start'])
+    if request.form['start']:
+        start = datetime.strptime(request.form['start'] , '%Y-%m-%d')
+    else:
+        start = datetime.strptime("2000-01-01", '%Y-%m-%d')
+    if request.form['end']:
+        end = datetime.strptime(request.form['end'] , '%Y-%m-%d')
+    else:
+        end = datetime.strptime("3000-01-01", '%Y-%m-%d')
+
+    result = []
+    with open(app_home + '/db/used_num.txt', 'r') as f:
+        used_num = [s.strip() for s in f.readlines()]
+
+    tmp = {}
+    for data_num in used_num:
+        with open(app_home + f'/db/data/data{data_num}.json', 'r') as f:
+            tmp = json.load(f)
+
+        if pr_name in tmp['name']:
+            tmp['created_at'] = datetime.strptime(tmp['created_at'], '%Y-%m-%dT%H:%M:%S')
+            if tmp['created_at'] > start and tmp['created_at'] < end:
+                tmp.update(url=f"https://github.com/{user}/{repo}/pull/{tmp['github_number']}")
+                result.append(tmp)
 
     # index.html をレンダリングする
     return render_template('index.html', project=f"{user}/{repo}", body=result, title=title)
