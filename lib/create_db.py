@@ -39,7 +39,7 @@ def create_db():
 
     db.create("project_files",
                 """id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) UNIQUE KEY""")
+                name VARCHAR(200) UNIQUE KEY""")
 
     db.create("commits_files",
                 """commit_sha VARCHAR(100),

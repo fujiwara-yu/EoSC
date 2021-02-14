@@ -35,6 +35,7 @@ def rate_limit_controll():
     print(f"limit: {rate_remaining}")
     if (rate_remaining[0] < 10):
         print("API limit\nPlease wait 1 hour")
+        print(datetime.datetime.now())
         time.sleep(3600)
 
 #def rate_limit_controll():
@@ -81,6 +82,7 @@ def get_pull_commits(pulls):
     #pulls = repo.get_pulls(state='close', sort='created')
     state = "pull_request"
     for pull in pulls:
+        print(pull.number)
         commits = pull.get_commits()
         for commit in commits:
             com = target_repo.get_commit(commit.sha)
@@ -156,7 +158,7 @@ def run(github_number=None):
         issues.append(target_repo.get_issue(github_number))
     else:
         pulls = target_repo.get_pulls(state='closed', sort='created')
-        issues = target_repo.get_issues(state='closed')
+        issues = target_repo.get_issues(state='closed', direction='asc')
 
     get_pull_requests(pulls)
     get_pull_request_comments(issues)
