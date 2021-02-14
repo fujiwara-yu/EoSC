@@ -21,7 +21,9 @@ class PullRequestFeature:
         self.branch_active = self.branch_active_check(pr)
         self.created_at = pr.created_at
         self.useful = self.useful_check(pr)
-
+        #new features
+        self.pr_file_active = self.pr_file_active_check(pr)
+        self.pr_branch_active = self.pr_branch_active_check(pr)
 
     #private
 
@@ -88,6 +90,71 @@ class PullRequestFeature:
     def file_active_check(self, pr):
         db = lib.database.Database()
         months_back = 3
+        query = 'SELECT sha, created_at FROM commits WHERE pull_request_id = %s;'
+        commits = db.select(query, (pr.id,))
+
+        # pr作成日時
+        tc = pr.created_at
+
+        # 初期化
+        activity = 0
+        for commit in commits:
+            start = commit[1] + datetime.timedelta(days=-30*months_back)
+            end = commit[1]
+
+            query = "SELECT DISTINCT file_id, name FROM commits_files INNER JOIN project_files ON commits_files.file_id = project_files.id WHERE commit_sha = %s;"
+            files = db.select(query, (commit[0],))
+            for file in files:
+                # ３ヶ月に限定する
+                query = "SELECT DISTINCT sha, created_at FROM commits_files INNER JOIN commits ON commits_files.commit_sha = commits.sha WHERE file_id = %s AND commits.created_at BETWEEN %s AND %s;"
+                commit_create_time_list = db.select(query, (file[0],start,end))
+                #print(commit_create_time_list)
+                for commit_create_time in commit_create_time_list:
+                    activity = activity + 1.0 - (tc - commit_create_time[1]).total_seconds() / (3600.0 * 24 * 30 * months_back)
+
+        return activity
+
+    # 3ヵ月分のcommitを調べる
+    # pullreqに含まれるcommitの変更したブランチを調べる
+    # ブランチを変更しているcommitが３ヵ月以内であれば取り出す
+    def branch_active_check(self, pr):
+        db = lib.database.Database()
+        months_back = 3
+        tc = pr.created_at
+        activity = 0
+        branch = pr.branch
+        start = pr.created_at + datetime.timedelta(days=-30*months_back)
+        end = pr.created_at
+
+        query = "SELECT DISTINCT sha, commits.created_at FROM pull_requests INNER JOIN commits ON pull_requests.id = commits.pull_request_id WHERE branch = %s AND commits.created_at BETWEEN %s AND %s;"
+        commit_list = db.select(query, (branch,start,end))
+
+        for commit in commit_list:
+            activity = activity + 1.0 - (tc - commit[1]).total_seconds() / (3600.0 * 24 * 30 * months_back)
+
+        #print(activity)
+        return activity
+
+    def pr_branch_active_check(self, pr):
+        db = lib.database.Database()
+        months_back = 3
+        tc = pr.created_at
+        activity = 0
+        branch = pr.branch
+        start = pr.created_at + datetime.timedelta(days=-30*months_back)
+        end = pr.created_at
+
+        query = "SELECT created_at FROM pull_requests WHERE branch = %s AND created_at BETWEEN %s AND %s;"
+        pulls = db.select(query, (branch,start,end))
+
+        for pull in pulls:
+            activity = activity + 1.0 - (tc - pull[0]).total_seconds() / (3600.0 * 24 * 30 * months_back)
+
+        return activity
+
+    def pr_file_active_check(self, pr):
+        db = lib.database.Database()
+        months_back = 3
         query = 'SELECT * FROM commits WHERE pull_request_id = %s;'
         commits = db.select(query, (pr.id,))
 
@@ -101,44 +168,20 @@ class PullRequestFeature:
         start = pr.created_at + datetime.timedelta(days=-30*months_back)
         end = pr.created_at
 
-        # commits_and_files と filesを組み合わせる
+        # ファイル一覧の作成
         for commit in commits:
-            query = "SELECT DISTINCT file_id, name FROM commits_files INNER JOIN project_files ON commits_files.file_id = project_files.id WHERE commit_sha = %s;"
+            query = "SELECT DISTINCT file_id FROM commits_files WHERE commit_sha = %s;"
             files = db.select(query, (commit[0],))
             for f in files:
-                file_list.append(f)
+                file_list.append(f[0])
 
         for file in file_list:
-            # ３ヶ月に限定する
-            query = "SELECT DISTINCT sha, created_at FROM commits_files INNER JOIN commits ON commits_files.commit_sha = commits.sha WHERE file_id = %s AND commits.created_at BETWEEN %s AND %s;"
-            commit_create_time_list = db.select(query, (file[0],start,end))
-            #print(commit_create_time_list)
-            for commit_create_time in commit_create_time_list:
-                activity = activity + 1.0 - (tc - commit_create_time[1]).total_seconds() / (3600.0 * 24 * 30 * months_back)
+            #対象期間のpr取り出し
+            query = "SELECT pull_requests.created_at FROM pull_requests INNER JOIN commits ON pull_requests.id = commits.pull_request_id INNER JOIN commits_files ON commits.sha = commits_files.commit_sha WHERE commits_files.file_id = %s  AND pull_requests.created_at BETWEEN %s AND %s;"
+            pr_create_time_list = db.select(query, (file,start,end))
+            for pr_create_time in pr_create_time_list:
+                activity = activity + 1.0 - (tc - pr_create_time[0]).total_seconds() / (3600.0 * 24 * 30 * months_back)
 
-        return activity
-
-    # 3ヵ月分のcommitを調べる
-    # pullreqに含まれるcommitの変更したブランチを調べる
-    # ブランチを変更しているcommitが３ヵ月以内であれば取り出す
-    # できてない
-    def branch_active_check(self, pr):
-        db = lib.database.Database()
-        months_back = 3
-        tc = pr.created_at
-        activity = 0
-        branch = pr.branch
-        start = pr.created_at + datetime.timedelta(days=-30*months_back)
-        end = pr.created_at
-
-        # 3ヵ月いないのをブランチごとに取り出す pr[7]のブランチの情報でwhere
-        query = "SELECT DISTINCT sha, commits.created_at FROM pull_requests INNER JOIN commits ON pull_requests.id = commits.pull_request_id WHERE branch = %s AND commits.created_at BETWEEN %s AND %s;"
-        commit_list = db.select(query, (branch,start,end))
-
-        for commit in commit_list:
-            activity = activity + 1.0 - (tc - commit[1]).total_seconds() / (3600.0 * 24 * 30 * months_back)
-
-        #print(activity)
         return activity
 
 class PullRequestFeatureController:
@@ -147,13 +190,15 @@ class PullRequestFeatureController:
         prf = PullRequestFeature(pr)
         with open(app_home + '/db/pull_request_feature.csv', 'a') as f:
             writer = csv.writer(f)
-            writer.writerow([prf.github_number, prf.commits, prf.fix_len, prf.changed_files, prf.file_active, prf.branch_active, prf.created_at, prf.useful])
+            #writer.writerow([prf.github_number, prf.commits, prf.fix_len, prf.changed_files, prf.file_active, prf.branch_active, prf.created_at, prf.useful])
+            writer.writerow([prf.github_number, prf.commits, prf.fix_len, prf.changed_files, prf.file_active, prf.branch_active, prf.created_at, prf.useful, prf.pr_branch_active, prf.pr_file_active])
         return prf
 
     def get_pull_request_feature_all():
         with open(app_home + '/db/pull_request_feature.csv', 'w') as f:
             writer = csv.writer(f)
-            writer.writerow(["github_number", "commits", "fix_len", "changed_files", "file_active", "branch_active", "created_at", "useful"])
+            #writer.writerow(["github_number", "commits", "fix_len", "changed_files", "file_active", "branch_active", "created_at", "useful"])
+            writer.writerow(["github_number", "commits", "fix_len", "changed_files", "file_active", "branch_active", "created_at", "useful", "pr_branch_active", "pr_file_active"])
 
         pull_request_feature_list =[]
         pull_requests = PullRequestController.get_pull_request_all()
