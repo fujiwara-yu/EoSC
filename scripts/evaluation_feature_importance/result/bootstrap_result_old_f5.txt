@@ -1,0 +1,6 @@
+feature importance1
+num_commits_open     : 0.055392
+lines_modified_open  : 0.176238
+files_modified_open  : 0.057765
+commits_on_files_touched : 0.322816
+branch_hotness       : 0.387789
